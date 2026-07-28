@@ -18,7 +18,9 @@ import * as EnvironmentSupervisor from "../connection/supervisor.ts";
 import * as Persistence from "../platform/persistence.ts";
 import type { WsRpcProtocolClient } from "../rpc/protocol.ts";
 import type { RpcSession } from "../rpc/session.ts";
-import { makeCachedVcsRefsChanges } from "./vcs.ts";
+import { AtomRegistry } from "effect/unstable/reactivity";
+
+import { makeCachedVcsRefsChanges, makeVcsRefsInvalidation } from "./vcs.ts";
 
 const TARGET = new PrimaryConnectionTarget({
   environmentId: EnvironmentId.make("environment-1"),
@@ -89,6 +91,28 @@ function cacheWithRefs(refs: Option.Option<VcsListRefsResult>) {
 }
 
 describe("cached VCS refs", () => {
+  it("invalidates only ref streams for the mutated repository", () => {
+    const registry = AtomRegistry.make();
+    const invalidation = makeVcsRefsInvalidation();
+    const repository = {
+      environmentId: TARGET.environmentId,
+      cwd: "/repo",
+    };
+    const otherRepository = {
+      environmentId: TARGET.environmentId,
+      cwd: "/other-repo",
+    };
+
+    expect(registry.get(invalidation.revisionAtom(repository))).toBe(0);
+    expect(registry.get(invalidation.revisionAtom(otherRepository))).toBe(0);
+
+    invalidation.invalidate(registry, repository);
+
+    expect(registry.get(invalidation.revisionAtom(repository))).toBe(1);
+    expect(registry.get(invalidation.revisionAtom(otherRepository))).toBe(0);
+    registry.dispose();
+  });
+
   it.effect("loads an unfiltered branch list without a connection", () =>
     Effect.scoped(
       Effect.gen(function* () {
