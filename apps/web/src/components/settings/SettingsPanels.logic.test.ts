@@ -1,16 +1,39 @@
 import {
   DEFAULT_SERVER_SETTINGS,
+  DEFAULT_UNIFIED_SETTINGS,
   ProviderDriverKind,
   ProviderInstanceId,
   type ProviderInstanceConfig,
 } from "@t3tools/contracts";
+import * as Duration from "effect/Duration";
 import { describe, expect, it } from "vite-plus/test";
 import {
   buildProviderInstanceUpdatePatch,
   formatDiagnosticsDescription,
+  hasChangedBackgroundActivitySettings,
   isProjectGroupingEnabled,
   projectGroupingModeFromToggle,
 } from "./SettingsPanels.logic";
+
+describe("background activity settings restore", () => {
+  it("detects legacy interval values even when the structured setting is at its default", () => {
+    expect(
+      hasChangedBackgroundActivitySettings({
+        backgroundActivity: DEFAULT_UNIFIED_SETTINGS.backgroundActivity,
+        automaticGitFetchInterval: Duration.seconds(45),
+        providerHealthRefreshInterval: DEFAULT_UNIFIED_SETTINGS.providerHealthRefreshInterval,
+      }),
+    ).toBe(true);
+    expect(
+      hasChangedBackgroundActivitySettings({
+        backgroundActivity: DEFAULT_UNIFIED_SETTINGS.backgroundActivity,
+        automaticGitFetchInterval: DEFAULT_UNIFIED_SETTINGS.automaticGitFetchInterval,
+        providerHealthRefreshInterval: Duration.minutes(7),
+      }),
+    ).toBe(true);
+    expect(hasChangedBackgroundActivitySettings(DEFAULT_UNIFIED_SETTINGS)).toBe(false);
+  });
+});
 
 describe("project grouping toggle", () => {
   it("enables repository grouping and disables into separate projects", () => {

@@ -140,6 +140,7 @@ function makeTestInstance(input: MakeInstanceInput) {
   const stubLog: DesktopObservability.DesktopBackendOutputLogShape = {
     beginSession: () => Effect.void,
     writeOutputChunk: () => Effect.void,
+    persistFailureSnapshot: () => Effect.void,
     persistFailure: () => Effect.void,
     discardSession: Effect.void,
     ...input.backendOutputLog,
@@ -158,6 +159,8 @@ function makeTestInstance(input: MakeInstanceInput) {
       changes: Stream.empty,
       encoded: input.desktopTelemetryStream ?? Stream.empty,
       handleControl: () => Effect.void,
+      handleControlForSource: (_sourceId, message) =>
+        (input.desktopTelemetryPublisher?.handleControl ?? (() => Effect.void))(message),
       ...input.desktopTelemetryPublisher,
     }),
   );

@@ -7,6 +7,7 @@ import type {
   UnifiedSettings,
 } from "@t3tools/contracts";
 import { DEFAULT_UNIFIED_SETTINGS } from "@t3tools/contracts/settings";
+import * as Equal from "effect/Equal";
 
 export function isProjectGroupingEnabled(mode: SidebarProjectGroupingMode): boolean {
   return mode !== "separate";
@@ -39,6 +40,25 @@ export function rememberEnabledProjectGroupingMode(mode: SidebarProjectGroupingM
   } catch {
     // Storage can be unavailable in restricted browser contexts.
   }
+}
+
+export function hasChangedBackgroundActivitySettings(
+  settings: Pick<
+    UnifiedSettings,
+    "backgroundActivity" | "automaticGitFetchInterval" | "providerHealthRefreshInterval"
+  >,
+): boolean {
+  return (
+    !Equal.equals(settings.backgroundActivity, DEFAULT_UNIFIED_SETTINGS.backgroundActivity) ||
+    !Equal.equals(
+      settings.automaticGitFetchInterval,
+      DEFAULT_UNIFIED_SETTINGS.automaticGitFetchInterval,
+    ) ||
+    !Equal.equals(
+      settings.providerHealthRefreshInterval,
+      DEFAULT_UNIFIED_SETTINGS.providerHealthRefreshInterval,
+    )
+  );
 }
 
 function collapseOtelSignalsUrl(input: {
